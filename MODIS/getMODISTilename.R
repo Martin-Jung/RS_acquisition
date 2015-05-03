@@ -56,5 +56,7 @@ getMODISTilename <- function(df.coord,prj="+proj=longlat +ellps=WGS84",show=FALS
   # Pad zeros if necessary
   ov$h <- str_pad(ov$h, 2,pad = 0)
   ov$v <- str_pad(ov$v, 2,pad = 0)
+  ov$name <- paste0("h",ov$h,"v",ov$v)
   return(ov)
 }
+
