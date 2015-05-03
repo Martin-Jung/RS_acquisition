@@ -22,4 +22,4 @@ def List_MODIS_products(site="http://e4ftl01.cr.usgs.gov/",satellite="MOTA"):
     return files
 
 # So what do we have on offer?
-print( List_http_contents() )
+print( List_MODIS_products() )
