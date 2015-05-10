@@ -1,3 +1,109 @@
+#' ScenesStatistics - Shows statistics of the landsat metadata
+#' 
+#' @author Martin Jung
+#' @param mission Which satellite mission (default = "ALL")
+#' @return statistics of the scene metadata 
+
+ScenesStatistics <- function(mission="ALL"){
+  if(!require(dplyr))install.packages("dplyr");library(dplyr)
+  if(!require(ggplot2))install.packages("ggplot2");library(ggplot2)
+  
+  ll <- list.files("scenes-list/",full.names = T)
+  ll <- ll[-grep("report",ll)] # kick out the report
+  
+  zz <- read.table(ll[1],header = T,sep = ",",dec = ".")   
+  
+  zz %>% mutate(longr = round(sceneCenterLongitude,1), latr = round(sceneCenterLatitude,1)) %>%
+    group_by(latr,longr) %>%
+    summarize(N = n(),
+              cav = mean(cloudCoverFull)) %>%
+    qplot(x=longr,y=latr,color=cav,size=N,geom="point",data=.) + theme_classic()
+  
+  
+}
+
+#' updateLandsatScenes - Update landsat if server version has been modified
+#' 
+#' @author Martin Jung
+#' @return a data.frame containing the tile numbers
+
+#Check online files for last modification date via HTTP headers
+
+#' getLandsatScenes - Downloading landsat metadata
+#' 
+#' @author Martin Jung
+#' @return a data.frame containing the tile numbers
+
+getLandsatScenes <- function(){
+  dir.create("scenes-list",showWarnings = FALSE)
+  
+  print("Downloading Landsat 8")
+  # Alternative - Landsat 8
+  #http://landsat-pds.s3.amazonaws.com/scene_list.gz
+  # Landsat 8  
+  d <- try({
+    download.file("http://landsat.usgs.gov/metadata_service/bulk_metadata_files/LANDSAT_8.csv.gz",destfile = "scenes-list/LANDSAT_8.csv.gz")
+    })
+  if(class(d) == "try-error") stop("Download problem with Landsat 8")
+  
+  print("Downloading Landsat 7 - SLC on")
+  # Landsat 7 - SLC on
+  d <- try({
+    download.file("http://landsat.usgs.gov/metadata_service/bulk_metadata_files/LANDSAT_ETM.csv.gz",destfile = "scenes-list/LANDSAT_ETM.csv.gz")
+  })
+  if(class(d) == "try-error") stop("Download problem with Landsat 7 - SLC on")
+  
+  print("Downloading Landsat 7 - SLC off")
+  # Landsat 7 - SLC off
+  d <- try({
+    download.file("http://landsat.usgs.gov/metadata_service/bulk_metadata_files/LANDSAT_ETM_SLC_OFF.csv.gz",destfile = "scenes-list/LANDSAT_ETM_SLC_OFF.csv.gz")
+  })
+  if(class(d) == "try-error") stop("Download problem with Landsat 7 - SLC off")
+
+  print("Downloading Landsat 4-5 80s")
+  # Landsat 4-5 80s
+  d <- try({
+    download.file("http://landsat.usgs.gov/metadata_service/bulk_metadata_files/LANDSAT_TM-1980-1989.csv.gz",destfile = "scenes-list/LANDSAT_TM-1980-1989.csv.gz")
+  })
+  if(class(d) == "try-error") stop("Download problem with Landsat 4-5 80s")
+
+  print("Downloading Landsat 4-5 90s")
+  # Landsat 4-5 90s
+  d <- try({
+    download.file("http://landsat.usgs.gov/metadata_service/bulk_metadata_files/LANDSAT_TM-1990-1999.csv.gz",destfile = "scenes-list/LANDSAT_TM-1990-1999.csv.gz")
+  })
+  if(class(d) == "try-error") stop("Download problem with Landsat 4-5 90s")
+  
+  print("Downloading Landsat 4-5 00s")
+  # Landsat 4-5 00s
+  d <- try({
+    download.file("http://landsat.usgs.gov/metadata_service/bulk_metadata_files/LANDSAT_TM-2000-2009.csv.gz",destfile = "scenes-list/LANDSAT_TM-2000-2009.csv.gz")
+  })
+  if(class(d) == "try-error") stop("Download problem with Landsat 4-5 00s")  
+  
+  print("Downloading Landsat 4-5 10s")
+  # Landsat 4-5 10s
+  d <- try({
+    download.file("http://landsat.usgs.gov/metadata_service/bulk_metadata_files/LANDSAT_TM-2010-2012.csv.gz",destfile = "scenes-list/LANDSAT_TM-2010-2012.csv.gz")
+  })
+  if(class(d) == "try-error") stop("Download problem with Landsat 4-5 10s")    
+  # ------- #
+  print("Download finished. Creating report file")
+  # Create a result data frame with a list of files, date and time and md5 chksum
+  # does the md5 checksum 
+  if(!require(lubridate))install.packages("lubridate");library(lubridate)
+  if(!require(tools))install.packages("tools");library(tools)
+  
+  d <- now()
+  mdl <- md5sum(dir("scenes-list/", pattern = "*", full.names = TRUE))  
+  report <- data.frame(
+    date = rep(strftime(d,"%d-%m-%Y"),times = length(mdl)),
+    time = rep(strftime(d,"%X"),times = length(mdl)),
+    filenames = names(mdl),
+    md5_chksum = as.vector(mdl)
+    )
+  write.csv(report,"scenes-list/report.csv")
+}
 
 #' getWRS - Download the WRS shapefiles and save them in rds objects
 #' 
